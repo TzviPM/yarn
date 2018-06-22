@@ -205,6 +205,29 @@ test('RequestManager.execute Request 403 error', async () => {
   });
 });
 
+test('RequestManager.execute Request 403 error with fallbackUrl', async () => {
+  const config = await Config.create({}, new Reporter());
+  jest.mock('request', factory => options => {
+    options.callback('', {statusCode: 403}, '');
+    return {
+      on: () => {},
+    };
+  });
+  await config.requestManager.execute({
+    params: {
+      url: `https://localhost:port/?nocache`,
+      fallbackUrl: `https://localhost:port/?nocache&foo`,
+      headers: {Connection: 'close'},
+    },
+    resolve: body => {},
+    reject: err => {
+      expect(err.message).toBe(
+        'https://localhost:port/?nocache&foo: Request "https://localhost:port/?nocache&foo" returned a 403',
+      );
+    },
+  });
+});
+
 test('RequestManager.request with offlineNoRequests', async () => {
   const config = await Config.create({offline: true}, new Reporter());
   try {

@@ -35,6 +35,7 @@ export type RequestMethods = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'DELETE';
 
 type RequestParams<T> = {
   url: string,
+  fallbackUrl?: string,
   auth?: {
     email?: string,
     username?: string,
@@ -371,6 +372,14 @@ export default class RequestManager {
           params.cleanup();
         }
         this.queueForOffline(opts);
+      } else if (params.fallbackUrl != null) {
+        params.url = params.fallbackUrl;
+        delete params.fallbackUrl;
+        delete params.retryAttempts;
+        if (typeof params.cleanup === 'function') {
+          params.cleanup();
+        }
+        this.execute(opts);
       } else {
         reject(err);
       }
@@ -390,13 +399,13 @@ export default class RequestManager {
         this.reporter.verbose(this.reporter.lang('verboseRequestFinish', params.url, res.statusCode));
 
         if (body && typeof body.error === 'string') {
-          reject(new Error(body.error));
+          onError(new Error(body.error));
           return;
         }
 
         if (res.statusCode === 403) {
           const errMsg = (body && body.message) || reporter.lang('requestError', params.url, res.statusCode);
-          reject(new Error(errMsg));
+          onError(new Error(errMsg));
         } else {
           if ([400, 401, 404].concat(params.rejectStatusCode || []).indexOf(res.statusCode) !== -1) {
             body = false;

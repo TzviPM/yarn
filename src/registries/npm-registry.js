@@ -131,6 +131,7 @@ export default class NpmRegistry extends Registry {
     const packageIdent = (packageName && NpmRegistry.escapeName(packageName)) || pathname;
     const registry = opts.registry || this.getRegistry(packageIdent);
     const requestUrl = this.getRequestUrl(registry, pathname);
+    const fallbackUrl = this.getRequestUrl(DEFAULT_REGISTRY, pathname);
 
     const alwaysAuth = this.getRegistryOrGlobalOption(registry, 'always-auth');
 
@@ -156,6 +157,7 @@ export default class NpmRegistry extends Registry {
 
     return this.requestManager.request({
       url: requestUrl,
+      fallbackUrl,
       method: opts.method,
       body: opts.body,
       auth: opts.auth,
